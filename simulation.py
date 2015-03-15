@@ -20,7 +20,8 @@ class Particle(object):
         self.acceleration = Vector()
         self._cachedForce = Vector()
         self.canvas_obj=canvas.create_oval(self.position.x, self.position.y,
-                                           self.position.x+3, self.position.y+3, fill="blue")
+                                           self.position.x+3, self.position.y+3,
+                                           fill = "red" if q > 0 else "blue")
 
     def tick(self, dt):
         self.acceleration.x = self._cachedForce.x / self.mass
@@ -51,18 +52,19 @@ class System(object):
     def tick(self, dt):
 
         for p in self.particles:
+            p._cachedForce.x = 0
+            p._cachedForce.y = 0
             for q in self.particles:
                 if p != q:
                     x = q.position.x - p.position.x
                     y = q.position.y - p.position.y
                     r = math.sqrt(x**2 + y**2)
-                    F = self.chargeForce(p.charge, q.charge, r) + \
+                    F = -self.chargeForce(p.charge, q.charge, r) + \
                          self.gravityForce(p.mass, q.mass, r)
                     Fx = F*x / r
                     Fy = F*y / r
                     p._cachedForce.x += Fx
                     p._cachedForce.y += Fy
-
         for p in self.particles:
             p.tick(dt)
 
@@ -81,8 +83,12 @@ root.update()
 
 
 s = System()
-s.addParticle(Particle(25, 25, 5e-5, 3))
-s.addParticle(Particle(50, 50, 3e-5, 7))
+s.addParticle(Particle(25, 25, -5e-3, 30))
+s.addParticle(Particle(50, 50, 3e-3, 70))
+s.addParticle(Particle(75, 25, 3e-3, 50))
+s.addParticle(Particle(25, 50, -8e-3, 130))
+s.addParticle(Particle(50, 25, 4e-3, 70))
+s.addParticle(Particle(75, 50, 1e-3, 10))
 
 last_tick_time = time.time()
 
