@@ -1,6 +1,6 @@
 from Tkinter import *
 import math
-
+import time
 
 class Vector(object):
     def __init__(self, x = 0, y = 0):
@@ -15,20 +15,23 @@ class Particle(object):
     def __init__(self, x, y, q = 1, m = 100):
         self.charge = q # charge in Coulombs
         self.mass = m # mass in kg
-        self.position = Vetor(x, y)
+        self.position = Vector(x, y)
         self.velocity = Vector()
         self.acceleration = Vector()
         self._cachedForce = Vector()
-        self.canvas_obj=canvas.create_oval(self.position.x,self.position.y,self.position.x+3,self.position.y+3,fill="blue")
+        self.canvas_obj=canvas.create_oval(self.position.x, self.position.y,
+                                           self.position.x+3, self.position.y+3, fill="blue")
 
     def tick(self, dt):
-        self.acceleration.x += self._cachedForce.x / self.mass
-        self.acceleration.y += self._cachedForce.y / self.mass
+        self.acceleration.x = self._cachedForce.x / self.mass
+        self.acceleration.y = self._cachedForce.y / self.mass
         self.velocity.x += self.acceleration.x * dt
         self.velocity.y += self.acceleration.y * dt
+        oldx = self.position.x
+        oldy = self.position.y
         self.position.x += self.velocity.x * dt
         self.position.y += self.velocity.y * dt
-        canvas.move(self.canvas_obj,self.position.x, self.position.y)
+        canvas.move(self.canvas_obj, self.position.x - oldx, self.position.y - oldy)
 
 
 class System(object):
@@ -50,30 +53,51 @@ class System(object):
         for p in self.particles:
             for q in self.particles:
                 if p != q:
-                    fx = self.chargeForce(p.charge, q.charge, q.position.x - p.position.x) + \
-                         self.gravityForce(p.mass, q.mass, q.position.x - p.position.x)
-                    fy = self.chargeForce(p.charge, q.charge, q.position.y - p.position.y) + \
-                         self.gravityForce(p.mass, q.mass, q.position.y - p.position.y)
-                    p._cachedForce.x += fx
-                    p._cachedForce.y += fy
+                    x = q.position.x - p.position.x
+                    y = q.position.y - p.position.y
+                    r = math.sqrt(x**2 + y**2)
+                    F = self.chargeForce(p.charge, q.charge, r) + \
+                         self.gravityForce(p.mass, q.mass, r)
+                    Fx = F*x / r
+                    Fy = F*y / r
+                    p._cachedForce.x += Fx
+                    p._cachedForce.y += Fy
 
         for p in self.particles:
-            p.tick()
+            p.tick(dt)
 
         self.ticks += 1
 
 
 
-window = Tk()
-canvas = Canvas(window, width = 400, height = 300)
+root = Tk()
+root.title("Simulation")
+
+frame = Frame(root, bd=5)
+frame.pack()
+canvas = Canvas(frame, width=400, height=300)
 canvas.pack()
+root.update()
 
 
 s = System()
-s.addParticle(Particle(25, 25))
-s.addParticle(Particle(50, 25))
+s.addParticle(Particle(25, 25, 5e-5, 3))
+s.addParticle(Particle(50, 50, 3e-5, 7))
+
+last_tick_time = time.time()
 
 while(True):
-    s.tick(1)
+    tick_start_time = time.time()
+    dt = tick_start_time - last_tick_time
+    s.tick(dt)
+    last_tick_time = tick_start_time
+    for p in s.particles:
+        print p.position.x, p.position.y
+    print "dt", dt
+    root.update()
+    time.sleep(1.0/60)
+
+
+
 
 
