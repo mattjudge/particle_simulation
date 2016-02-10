@@ -1,6 +1,14 @@
-from Tkinter import *
+from tkinter import *
 import math
 import time
+
+
+def charge_force(q1, q2, r):
+    return 8.988e9 * q1 * q2 / r ** 2
+
+
+def gravity_force(m1, m2, r):
+    return 6.67e-34 * m1 * m2 / r ** 2
 
 
 class Vector2(object):
@@ -18,7 +26,7 @@ class Vector2(object):
         # only works when other is of numeric type
         return Vector2(self.x * other, self.y * other)
 
-    def __div__(self, other):
+    def __truediv__(self, other):
         # only works when other is of numeric type
         return Vector2(self.x / other, self.y / other)
 
@@ -69,12 +77,6 @@ class System(object):
     def add_particle(self, particle):
         self.particles.append(particle)
 
-    def charge_force(self, q1, q2, r):
-        return 8.988e9 * q1 * q2 / r ** 2
-
-    def gravity_force(self, m1, m2, r):
-        return 6.67e-34 * m1 * m2 / r ** 2
-
     def tick(self, dt):
         for p in self.particles:
             p.clear_cached_forces()
@@ -82,8 +84,8 @@ class System(object):
                 if p != q:
                     pq = q.position - p.position
                     r = abs(pq)
-                    force = -self.charge_force(p.charge, q.charge, r) + \
-                        self.gravity_force(p.mass, q.mass, r)
+                    force = -charge_force(p.charge, q.charge, r) + \
+                        gravity_force(p.mass, q.mass, r)
                     p.add_cached_force(pq * force / r)
 
         for p in self.particles:
@@ -115,15 +117,14 @@ s.add_particle(Particle(150, 100, -3e-3, 50))
 
 last_tick_time = time.time()
 
-
 while True:
     tick_start_time = time.time()
-    #dt = tick_start_time - last_tick_time
-    dt = 1.0/60
+    # dt = tick_start_time - last_tick_time  # realtime
+    dt = 1.0/60  # 60 ticks a second
     s.tick(dt)
     last_tick_time = tick_start_time
     for p in s.particles:
-        print p.position.x, p.position.y
-    print "dt", dt
+        print(p.position.x, p.position.y)
+    print("dt", dt)
     root.update()
     time.sleep(1.0/60)
